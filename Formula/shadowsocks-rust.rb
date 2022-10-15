@@ -21,6 +21,29 @@ class ShadowsocksRust < Formula
     system "cargo", "install", *std_cargo_args, "--features", "stream-cipher"
   end
 
+  def post_install
+    conf = etc/"shadowsocks-rust/local.json"
+    return if conf.exist?
+    # return unless conf.read.include?('username: "@@HOMEBREW-UNBOUND-USER@@"')
+    # inreplace conf, 'username: "@@HOMEBREW-UNBOUND-USER@@"',
+    #                 "username: \"#{ENV["USER"]}\""
+    conf.write <<~EOS
+      {
+        "server":"127.0.0.1",
+        "server_port": 1234,
+        "password":"mypassword",
+        "method":"aes-256-gcm",
+        "local_address":"127.0.0.1",
+        "local_port": 1080
+      }
+    EOS
+  end
+
+  service do
+    run [opt_bin/"sslocal", "-c", etc/"shadowsocks-rust/local.json"]
+    keep_alive true
+  end
+
   test do
     server_port = free_port
     local_port = free_port
